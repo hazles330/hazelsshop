@@ -5,15 +5,14 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useAuthStore } from '@/lib/store/authStore'
 
-interface PageParams {
-  id: string;
-}
+type PageProps = {
+  params: {
+    id: string;
+  };
+  searchParams?: { [key: string]: string | string[] | undefined };
+};
 
-interface Props {
-  params: PageParams;
-}
-
-export default function InquiryDetailPage({ params }: Props) {
+export default function InquiryDetailPage({ params }: PageProps) {
   const router = useRouter()
   const { user } = useAuthStore()
   const { inquiries, updateInquiryStatus, addResponse } = useInquiryStore()
