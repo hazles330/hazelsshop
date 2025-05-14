@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getUserPoints } from "@/utils/points"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+
+    if (userId) {
+      const result = await getUserPoints(userId)
+      return NextResponse.json(result)
+    }
+
     const points = await prisma.point.findMany({
       orderBy: {
         createdAt: 'desc'
