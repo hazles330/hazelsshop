@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from "@/lib/prisma";
+import bcrypt from 'bcryptjs';
 
 // GET /api/admin/users/[id]
 export async function GET(
@@ -8,9 +9,7 @@ export async function GET(
 ) {
   try {
     const user = await prisma.user.findUnique({
-      where: {
-        id: params.id
-      }
+      where: { id: params.id }
     });
     
     if (!user) {
@@ -35,29 +34,29 @@ export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const { role } = await request.json();
-  const userIndex = users.findIndex(user => user.id === params.id);
-  
-  if (userIndex === -1) {
+  try {
+    const { role } = await request.json();
+
+    if (!['admin', 'user'].includes(role)) {
+      return NextResponse.json(
+        { error: 'Invalid role' },
+        { status: 400 }
+      );
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: params.id },
+      data: { role }
+    });
+
+    return NextResponse.json(updatedUser);
+  } catch (error) {
+    console.error('User update error:', error);
     return NextResponse.json(
-      { error: 'User not found' },
-      { status: 404 }
+      { error: 'Failed to update user' },
+      { status: 500 }
     );
   }
-
-  if (!['admin', 'user'].includes(role)) {
-    return NextResponse.json(
-      { error: 'Invalid role' },
-      { status: 400 }
-    );
-  }
-
-  users[userIndex] = {
-    ...users[userIndex],
-    role
-  };
-
-  return NextResponse.json(users[userIndex]);
 }
 
 // PATCH /api/admin/users/[id]/{status|password}
@@ -65,54 +64,69 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const userIndex = users.findIndex(user => user.id === params.id);
-  if (userIndex === -1) {
-    return NextResponse.json(
-      { error: 'User not found' },
-      { status: 404 }
-    );
-  }
+  try {
+    const data = await request.json();
+    const url = new URL(request.url);
+    const pathname = url.pathname;
 
-  const data = await request.json();
-  const url = new URL(request.url);
-  const pathname = url.pathname;
+    // 사용자 존재 여부 확인
+    const existingUser = await prisma.user.findUnique({
+      where: { id: params.id }
+    });
 
-  // 상태 변경
-  if (pathname.endsWith('/status')) {
-    const { status } = data;
-    if (!['active', 'inactive', 'banned'].includes(status)) {
+    if (!existingUser) {
       return NextResponse.json(
-        { error: 'Invalid status' },
-        { status: 400 }
+        { error: 'User not found' },
+        { status: 404 }
       );
     }
 
-    users[userIndex] = {
-      ...users[userIndex],
-      status
-    };
-  }
-  // 비밀번호 변경
-  else if (pathname.endsWith('/password')) {
-    const { password } = data;
-    if (!password || password.length < 8) {
+    // 상태 변경
+    if (pathname.endsWith('/status')) {
+      const { status } = data;
+      if (!['active', 'inactive', 'banned'].includes(status)) {
+        return NextResponse.json(
+          { error: 'Invalid status' },
+          { status: 400 }
+        );
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { id: params.id },
+        data: { status }
+      });
+
+      return NextResponse.json(updatedUser);
+    }
+    // 비밀번호 변경
+    else if (pathname.endsWith('/password')) {
+      const { password } = data;
+      if (!password || password.length < 8) {
+        return NextResponse.json(
+          { error: '비밀번호는 최소 8자 이상이어야 합니다.' },
+          { status: 400 }
+        );
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const updatedUser = await prisma.user.update({
+        where: { id: params.id },
+        data: { password: hashedPassword }
+      });
+
+      return NextResponse.json({ success: true });
+    }
+    else {
       return NextResponse.json(
-        { error: '비밀번호는 최소 8자 이상이어야 합니다.' },
+        { error: 'Invalid operation' },
         { status: 400 }
       );
     }
-
-    users[userIndex] = {
-      ...users[userIndex],
-      password // 실제로는 해시된 비밀번호를 저장해야 함
-    };
-  }
-  else {
+  } catch (error) {
+    console.error('User update error:', error);
     return NextResponse.json(
-      { error: 'Invalid operation' },
-      { status: 400 }
+      { error: 'Failed to update user' },
+      { status: 500 }
     );
   }
-
-  return NextResponse.json({ success: true });
 }
