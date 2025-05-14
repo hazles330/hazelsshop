@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getUserPoints } from "@/utils/points"
+import { calculateUserPoints } from "@/utils/points"
 
 export async function GET(request: Request) {
   try {
@@ -8,8 +8,8 @@ export async function GET(request: Request) {
     const userId = searchParams.get('userId')
 
     if (userId) {
-      const result = await getUserPoints(userId)
-      return NextResponse.json(result)
+      const totalPoints = await calculateUserPoints(userId)
+      return NextResponse.json({ totalPoints })
     }
 
     // 모든 포인트 내역 조회
@@ -48,5 +48,3 @@ export async function POST(request: Request) {
     )
   }
 }
-
-
