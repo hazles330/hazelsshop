@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Playfair_Display } from "next/font/google";
 import "./globals.css";
 import SearchBar from "@/components/ui/SearchBar";
@@ -9,9 +9,9 @@ import Link from "next/link";
 import CategoryDropdown from "@/components/ui/CategoryDropdown";
 import Footer from "@/components/layout/Footer";
 
-const geist = Geist({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-geist",
+  variable: "--font-inter",
 });
 
 const playfair = Playfair_Display({
@@ -31,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={`${geist.variable} ${playfair.variable} antialiased min-h-screen flex flex-col`}>
+      <body className={`${inter.variable} ${playfair.variable} antialiased min-h-screen flex flex-col`}>
         <Toaster position="bottom-right" />
         <header className="bg-white">
           {/* 로고와 네비게이션 섹션 */}
