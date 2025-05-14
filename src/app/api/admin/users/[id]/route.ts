@@ -1,21 +1,33 @@
 import { NextResponse } from 'next/server';
-import { users } from '../route';
+import { prisma } from "@/lib/prisma";
 
 // GET /api/admin/users/[id]
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const user = users.find(user => user.id === params.id);
-  
-  if (!user) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: params.id
+      }
+    });
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json(user);
+  } catch (error) {
+    console.error('User fetch error:', error);
     return NextResponse.json(
-      { error: 'User not found' },
-      { status: 404 }
+      { error: 'Failed to fetch user' },
+      { status: 500 }
     );
   }
-  
-  return NextResponse.json(user);
 }
 
 // PUT /api/admin/users/[id]/role
