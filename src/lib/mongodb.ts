@@ -6,7 +6,12 @@ if (!process.env.MONGODB_URI) {
 
 const connectDB = async () => {
   try {
-    const { connection } = await mongoose.connect(process.env.MONGODB_URI);
+    const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+      throw new Error('MONGODB_URI가 설정되지 않았습니다.');
+    }
+
+    const { connection } = await mongoose.connect(mongoUri);
     
     if (connection.readyState === 1) {
       console.log('MongoDB에 연결되었습니다.');
